@@ -10,12 +10,13 @@ var Asteroids = (function() {
 	}
 
 	// MovingObject contstructor
-	function MovingObject(x, y, game, dx, dy) {
+	function MovingObject(x, y, game, dx, dy, radius) {
 		this.x = x;
 		this.y = y;
 		this.dx = dx;
 		this.dy = dy;
 		this.game = game;
+		this.radius = radius;
 	}
 
 	MovingObject.prototype.update = function() {
@@ -40,12 +41,12 @@ var Asteroids = (function() {
 		var xDist2 = Math.pow(this.x - other.x, 2),
 		    yDist2 = Math.pow(this.y - other.y, 2);
 
-		return (Math.sqrt(xDist2 + yDist2) < 20);
+		return (Math.sqrt(xDist2 + yDist2) < this.radius + other.radius);
 	}
 
 	// Asteroid constructor
 	function Asteroid(x, y, game, dx, dy) {
-		MovingObject.call(this, x, y, game, dx, dy);
+		MovingObject.call(this, x, y, game, dx, dy, 10);
 	}
 
 	Asteroid.inherits(MovingObject);
@@ -69,7 +70,7 @@ var Asteroids = (function() {
 		context.arc(
 			this.x,
 			this.y,
-			10,
+			this.radius,
 			0,
 			2 * Math.PI,
 			false
@@ -90,7 +91,7 @@ var Asteroids = (function() {
 
 	// Ship constructor.
 	function Ship(game) {
-		MovingObject.call(this, game.xDim / 2, game.yDim / 2, game, 0.5, 0.5);
+		MovingObject.call(this, game.xDim / 2, game.yDim / 2, game, 0.5, 0.5, 10);
 		this.accel = 1.0;
 		this.drag = 0.95;
 		this.firing = false;
@@ -106,7 +107,7 @@ var Asteroids = (function() {
 		context.arc(
 			this.x,
 			this.y,
-			10,
+			this.radius,
 			0,
 			2 * Math.PI,
 			false
@@ -173,7 +174,7 @@ var Asteroids = (function() {
 	Ship.prototype.fire = function() {
 		if (key.isPressed("space") &&
 			 !this.firing &&
-			  this.game.bullets.length < 10) {
+			  this.game.bullets.length < 60) {
 			var bullet = new Bullet(this.game);
 			this.game.bullets.push(bullet);
 		}
@@ -186,7 +187,7 @@ var Asteroids = (function() {
 				dx = game.ship.direction().x * 3,
 				dy = game.ship.direction().y * 3;
 
-		MovingObject.call(this, x, y, game, dx, dy);
+		MovingObject.call(this, x, y, game, dx, dy, 3);
 	}
 
 	Bullet.inherits(MovingObject);
@@ -199,7 +200,7 @@ var Asteroids = (function() {
 		context.arc(
 			this.x,
 			this.y,
-			3,
+			this.radius,
 			0,
 			2 * Math.PI,
 			false
@@ -234,8 +235,12 @@ var Asteroids = (function() {
     var interval = window.setInterval(function () {
 			game.update();
       game.render(context);
-			if (game.over()) {
+
+			if (game.lose()) {
 				alert('Game over!');
+				clearInterval(interval);
+			} else if (game.win()) {
+				alert('You win!');
 				clearInterval(interval);
 			}
     }, 33);
@@ -261,6 +266,7 @@ var Asteroids = (function() {
 			var asteroid = this.asteroids[i];
 			asteroid.update();
 		}
+
 		for (var i = 0; i < this.bullets.length; i++) {
 			var bullet = this.bullets[i];
 			bullet.update();
@@ -268,17 +274,25 @@ var Asteroids = (function() {
 			if (bullet.offScreen()) {
 				this.bullets.splice(i, 1);
 			}
+
+			this.asteroids.forEach(function(asteroid, index) {
+				if (bullet.collidesWith(asteroid)) {
+					this.asteroids.splice(index, 1);
+					this.bullets.splice(i, 1);
+				}
+			}, this)
 		}
 
 		this.ship.update();
 	}
 
-	Game.prototype.over = function() {
+	Game.prototype.lose = function() {
 		return this.ship.isHit();
 	}
 
-
-
+	Game.prototype.win = function() {
+		return this.asteroids.length == 0;
+	}
 
 	return {
 		MovingObject: MovingObject,
