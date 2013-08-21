@@ -4,5 +4,5 @@ $(function () {
   $('body').append(canvas);
 
   // `canvas.get(0)` unwraps the jQuery'd DOM element;
-  new Asteroids.Game(1600, 900, 1).start(canvas.get(0));
+  new Asteroids.Game(1600, 900, 50).start(canvas.get(0));
 });

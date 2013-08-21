@@ -56,8 +56,8 @@ var Asteroids = (function() {
 			xDim * Math.random(),
 			yDim * Math.random(),
 			game,
-			(Math.random() - .5) * 5,
-			(Math.random() - .5) * 5
+			(Math.random() - .5) * 10,
+			(Math.random() - .5) * 10
 		);
 	}
 
@@ -184,8 +184,8 @@ var Asteroids = (function() {
 	function Bullet(game) {
 		var x  = game.ship.x,
 				y  = game.ship.y,
-				dx = game.ship.direction().x * 3,
-				dy = game.ship.direction().y * 3;
+				dx = game.ship.direction().x * 20,
+				dy = game.ship.direction().y * 20;
 
 		MovingObject.call(this, x, y, game, dx, dy, 3);
 	}
