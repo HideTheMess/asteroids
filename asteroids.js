@@ -29,11 +29,11 @@ var Asteroids = (function() {
 	}
 
 	MovingObject.prototype.offVertical = function() {
-		return this.x < 0 || this.x > this.game.xDim;
+		return this.x < this.radius || this.x > this.game.xDim - this.radius;
 	}
 
 	MovingObject.prototype.offHorizontal= function() {
-		return this.y < 0 || this.y > this.game.yDim;
+		return this.y < this.radius || this.y > this.game.yDim - this.radius;
 	}
 
 	MovingObject.prototype.collidesWith = function(other) {
@@ -44,9 +44,14 @@ var Asteroids = (function() {
 		return (Math.sqrt(xDist2 + yDist2) < this.radius + other.radius);
 	}
 
+	MovingObject.prototype.angle = function() {
+		var d = Math.atan2(this.dx, this.dy);
+		return (Math.PI - d);
+	}
+
 	// Asteroid constructor
 	function Asteroid(x, y, game, dx, dy) {
-		MovingObject.call(this, x, y, game, dx, dy, 10);
+		MovingObject.call(this, x, y, game, dx, dy, 20);
 	}
 
 	Asteroid.inherits(MovingObject);
@@ -64,7 +69,7 @@ var Asteroids = (function() {
 	Asteroid.prototype.render = function (context) {
 		console.log(context);
 
-		context.fillStyle = "black";
+		context.strokeStyle = "black";
 		context.beginPath();
 
 		context.arc(
@@ -76,17 +81,20 @@ var Asteroids = (function() {
 			false
 		);
 
-		context.fill();
+		context.lineWidth = 3;
+		context.stroke();
 	}
 
 	Asteroid.prototype.update = function() {
 		MovingObject.prototype.update.call(this);
 
 		if (this.offHorizontal()) {
-			this.dy = -this.dy;
-		} else if (this.offVertical()) {
-			this.dx = -this.dx;
+			this.dy = this.y > this.radius ? -Math.abs(this.dy + 1) : Math.abs(this.dy + 1);
 		}
+		if (this.offVertical()) {
+			this.dx = this.x > this.radius ? -Math.abs(this.dx + 1) : Math.abs(this.dx + 1);
+		}
+
 	}
 
 	// Ship constructor.
@@ -100,20 +108,29 @@ var Asteroids = (function() {
 	Ship.inherits(MovingObject);
 
 	Ship.prototype.render = function (context) {
-		context.fillStyle = "red";
 
-		context.beginPath();
+		context.save();
+		context.lineWidth = 3;
 
-		context.arc(
-			this.x,
-			this.y,
-			this.radius,
-			0,
-			2 * Math.PI,
-			false
-		);
 
-		context.fill();
+		context.translate(this.x, this.y)
+		context.rotate(this.angle());
+		context.fillStyle = "brown";
+		    context.beginPath();
+		context.arc(-15, 50, 10, 0, 2 * Math.PI, true);
+		context.arc(15, 50, 10, 0, 2 * Math.PI, true);
+		context.stroke();
+		    context.fill();
+		context.fillRect(-10, 0, 20, 50);
+		    context.beginPath();
+		    context.arc(0, 0, 10, 0, Math.PI, true);
+		    context.closePath();
+				context.stroke();
+				context.fill();
+
+
+		context.restore();
+
 	}
 
 	Ship.prototype.isHit = function() {
@@ -157,6 +174,8 @@ var Asteroids = (function() {
 		return { x: this.dx / speed, y: this.dy / speed }
 	}
 
+
+
 	Ship.prototype.update = function() {
 		this.accelerate();
 		this.fire();
@@ -164,10 +183,10 @@ var Asteroids = (function() {
 		MovingObject.prototype.update.call(this);
 
 		if (this.offHorizontal()) {
-			this.dy = this.y > 0 ? -Math.abs(this.dy + 2) : Math.abs(this.dy + 2);
+			this.dy = this.y > this.radius ? -Math.abs(this.dy + 12) : Math.abs(this.dy + 12);
 		}
 		if (this.offVertical()) {
-			this.dx = this.x > 0 ? -Math.abs(this.dx + 2) : Math.abs(this.dx + 2);
+			this.dx = this.x > this.radius ? -Math.abs(this.dx + 12) : Math.abs(this.dx + 12);
 		}
 	}
 
@@ -193,20 +212,18 @@ var Asteroids = (function() {
 	Bullet.inherits(MovingObject);
 
 	Bullet.prototype.render = function(context) {
-		context.fillStyle = "blue";
-
+		context.save();
+		context.translate(this.x, this.y)
+		context.rotate(this.angle());
 		context.beginPath();
-
-		context.arc(
-			this.x,
-			this.y,
-			this.radius,
-			0,
-			2 * Math.PI,
-			false
-		);
-
-		context.fill();
+		context.arc(0, 0, 5, 0, Math.PI*2, false);
+		context.stroke();
+		context.closePath();
+		    context.beginPath();
+		    context.moveTo(0, 5);
+		    context.bezierCurveTo(10,20,-10,30,0,40);
+		    context.stroke();
+		context.restore();
 	}
 
 	Bullet.prototype.update = function() {
@@ -237,7 +254,9 @@ var Asteroids = (function() {
       game.render(context);
 
 			if (game.lose()) {
-				alert('Game over!');
+				context.font ="96px Courier New";
+				context.textAlign = "center"
+				context.fillText("GAME OVER", 400, 300);
 				clearInterval(interval);
 			} else if (game.win()) {
 				alert('You win!');
@@ -277,7 +296,8 @@ var Asteroids = (function() {
 
 			this.asteroids.forEach(function(asteroid, index) {
 				if (bullet.collidesWith(asteroid)) {
-					this.asteroids.splice(index, 1);
+					asteroid.radius +=1;
+					// this.asteroids.splice(index, 1);
 					this.bullets.splice(i, 1);
 				}
 			}, this)
